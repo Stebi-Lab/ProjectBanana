@@ -188,7 +188,7 @@ namespace ProjectBanana
             //var corrected = new Vector2(_cameraPosition.X - (_cameraPosition.X % 8),
             //    _cameraPosition.Y - (_cameraPosition.Y % 8));
 
-            _camera.LookAt(_cameraPosition);
+            //_camera.LookAt(_cameraPosition);
 
             base.Update(gameTime);
         }
