@@ -232,6 +232,7 @@ namespace ProjectBanana
             Matrix transformMatrix = Matrix.CreateScale(GraphicsDevice.Viewport.Width / (float)_tiledMap.WidthInPixels, GraphicsDevice.Viewport.Height / (float)_tiledMap.HeightInPixels, 1f);
 
             _tiledMapRenderer.Draw(transformMatrix);
+            _spriteBatch.Draw(ballTexture, _playerPosition, Color.White);
             _spriteBatch.End();
 
             base.Draw(gameTime);
