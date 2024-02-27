@@ -54,40 +54,92 @@ namespace ProjectBanana
             return movementDirection;
         }
 
-        private Vector2 _targetCameraPosition;
-        private float _cameraSpeed = 500.0f; // Adjust the speed as needed
 
-        private void MoveCamera(GameTime gameTime)
+        bool _isFullscreen = false;
+        bool _isBorderless = false;
+        int _width = 0;
+        int _height = 0;
+        GameWindow _window;
+
+        public void ToggleFullscreen()
         {
-            var movementDirection = GetMovementDirection();
-            _targetCameraPosition += _cameraSpeed * movementDirection * (float)gameTime.ElapsedGameTime.TotalSeconds;
+            bool oldIsFullscreen = _isFullscreen;
 
-            // Interpolate the current camera position towards the target position for smoother movement
-            _cameraPosition = Vector2.Lerp(_cameraPosition, _targetCameraPosition, 0.1f);
-            //_cameraPosition = new Vector2((int)_cameraPosition.X, (int)_cameraPosition.Y);
+            if (_isBorderless)
+            {
+                _isBorderless = false;
+            }
+            else
+            {
+                _isFullscreen = !_isFullscreen;
+            }
+
+            ApplyFullscreenChange(oldIsFullscreen);
+        }
+        public void ToggleBorderless()
+        {
+            bool oldIsFullscreen = _isFullscreen;
+
+            _isBorderless = !_isBorderless;
+            _isFullscreen = _isBorderless;
+
+            ApplyFullscreenChange(oldIsFullscreen);
         }
 
-        //private void MoveCamera(GameTime gameTime)
-        //{
-        //    var speed = 300;
-        //    var seconds = gameTime.GetElapsedSeconds();
-        //    var movementDirection = GetMovementDirection();
-        //    _cameraPosition += speed * movementDirection * seconds;
-        //    //_cameraPosition = new Vector2((int)_cameraPosition.X, (int)_cameraPosition.Y);
-        //}
+        private void ApplyFullscreenChange(bool oldIsFullscreen)
+        {
+            if (_isFullscreen)
+            {
+                if (oldIsFullscreen)
+                {
+                    ApplyHardwareMode();
+                }
+                else
+                {
+                    SetFullscreen();
+                }
+            }
+            else
+            {
+                UnsetFullscreen();
+            }
+        }
+        private void ApplyHardwareMode()
+        {
+            _graphics.HardwareModeSwitch = !_isBorderless;
+            _graphics.ApplyChanges();
+        }
+        private void SetFullscreen()
+        {
+            _width = Window.ClientBounds.Width;
+            _height = Window.ClientBounds.Height;
+
+            _graphics.PreferredBackBufferWidth = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width;
+            _graphics.PreferredBackBufferHeight = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height;
+            _graphics.HardwareModeSwitch = !_isBorderless;
+
+            _graphics.IsFullScreen = true;
+            _graphics.ApplyChanges();
+        }
+        private void UnsetFullscreen()
+        {
+            _graphics.PreferredBackBufferWidth = _width;
+            _graphics.PreferredBackBufferHeight = _height;
+            _graphics.IsFullScreen = false;
+            _graphics.ApplyChanges();
+        }
 
         public Game1()
         {
             _graphics = new GraphicsDeviceManager(this);
             //_graphics.PreferMultiSampling = true;
-            _graphics.SynchronizeWithVerticalRetrace = true;
-            _graphics.PreferHalfPixelOffset = true;
-            
-
-            _graphics.PreferredBackBufferWidth = 1920;
-            _graphics.PreferredBackBufferHeight = 1080;
-       
-
+            //_graphics.SynchronizeWithVerticalRetrace = true;
+            //_graphics.PreferHalfPixelOffset = true;
+            //_graphics.ToggleFullScreen();
+            //_graphics.PreferredBackBufferWidth = 1920;
+            //_graphics.PreferredBackBufferHeight = 1080;
+            //_graphics.ApplyChanges();
+    
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
         }
@@ -97,20 +149,15 @@ namespace ProjectBanana
         {
             // TODO: Add your initialization logic here
 
+            ToggleFullscreen();
 
-            //var viewportadapter = new BoxingViewportAdapter(Window, GraphicsDevice, 10*1280, 10*960);
-            var viewportadapter = new WindowViewportAdapter(Window, GraphicsDevice);
-            //var viewportadapter = new ScalingViewportAdapter(GraphicsDevice, 10 * 1280, 10 * 960);
-            _camera = new OrthographicCamera(viewportadapter);
-
-            //_camera.ZoomIn((float)0);
             base.Initialize();
         }
 
         protected override void LoadContent()
         {
   
-            _tiledMap = Content.Load<TiledMap>("samplemap");
+            _tiledMap = Content.Load<TiledMap>("TestingMap");
             _tiledMapRenderer = new TiledMapRenderer(GraphicsDevice, _tiledMap);
             _spriteBatch = new SpriteBatch(GraphicsDevice);
             
@@ -125,12 +172,6 @@ namespace ProjectBanana
 
             _tiledMapRenderer.Update(gameTime);
 
-            MoveCamera(gameTime);
-            //var corrected = new Vector2(_cameraPosition.X - (_cameraPosition.X % 8),
-            //    _cameraPosition.Y - (_cameraPosition.Y % 8));
-
-            _camera.LookAt(_cameraPosition);
-
             base.Update(gameTime);
         }
 
@@ -139,13 +180,15 @@ namespace ProjectBanana
         {
             GraphicsDevice.Clear(Color.CornflowerBlue);
 
-            // _tiledMapRenderer.Draw();
+
             _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, 
-                SamplerState.PointClamp, null, null, null,
-                _camera.GetViewMatrix());
-            
-            _tiledMapRenderer.Draw(_camera.GetViewMatrix());
-       
+                SamplerState.PointClamp, DepthStencilState.None, RasterizerState.CullNone, 
+                null, null);
+
+            //_tiledMapRenderer.Draw();
+            Matrix transformMatrix = Matrix.CreateScale(GraphicsDevice.Viewport.Width / (float)_tiledMap.WidthInPixels, GraphicsDevice.Viewport.Height / (float)_tiledMap.HeightInPixels, 1f);
+
+            _tiledMapRenderer.Draw(transformMatrix);
             _spriteBatch.End();
 
             base.Draw(gameTime);
