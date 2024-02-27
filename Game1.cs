@@ -7,6 +7,8 @@ using MonoGame.Extended.Tiled.Renderers;
 
 using MonoGame.Extended;
 using MonoGame.Extended.ViewportAdapters;
+using System;
+using MonoGame.Extended.Sprites;
 
 namespace ProjectBanana
 {
@@ -23,6 +25,11 @@ namespace ProjectBanana
 
         TiledMap _tiledMap;
         TiledMapRenderer _tiledMapRenderer;
+
+
+        // playable character
+        private Texture2D ballTexture;
+        private Vector2 _playerPosition;
 
         private Vector2 GetMovementDirection()
         {
@@ -113,7 +120,10 @@ namespace ProjectBanana
             _tiledMap = Content.Load<TiledMap>("samplemap");
             _tiledMapRenderer = new TiledMapRenderer(GraphicsDevice, _tiledMap);
             _spriteBatch = new SpriteBatch(GraphicsDevice);
-            
+
+
+            ballTexture = Content.Load<Texture2D>("ball");
+            _playerPosition = new Vector2(0, 0);
         }
 
         // regular Updates of game => check for collisions, input, audio etc.
@@ -125,13 +135,40 @@ namespace ProjectBanana
 
             _tiledMapRenderer.Update(gameTime);
 
-            MoveCamera(gameTime);
+            // removed for now
+            MoveCharacter(gameTime);
+            //MoveCamera(gameTime);
             //var corrected = new Vector2(_cameraPosition.X - (_cameraPosition.X % 8),
             //    _cameraPosition.Y - (_cameraPosition.Y % 8));
 
             _camera.LookAt(_cameraPosition);
 
             base.Update(gameTime);
+        }
+
+        private void MoveCharacter(GameTime gameTime)
+        {
+            var deltaSeconds = (float)gameTime.ElapsedGameTime.TotalSeconds;
+            var walkSpeed = deltaSeconds * 500;
+            var keyboardState = Keyboard.GetState();
+
+            if (keyboardState.IsKeyDown(Keys.W) || keyboardState.IsKeyDown(Keys.Up))
+            {
+                _playerPosition.Y -= walkSpeed;
+            }
+            if (keyboardState.IsKeyDown(Keys.S) || keyboardState.IsKeyDown(Keys.Down))
+            {
+                _playerPosition.Y += walkSpeed;
+            }
+            if (keyboardState.IsKeyDown(Keys.A) || keyboardState.IsKeyDown(Keys.Left))
+            {
+                _playerPosition.X -= walkSpeed;
+            }
+
+            if (keyboardState.IsKeyDown(Keys.D) || keyboardState.IsKeyDown(Keys.Right))
+            {
+                _playerPosition.X += walkSpeed;
+            }
         }
 
         // takes game state current and draws game entities  
@@ -141,11 +178,11 @@ namespace ProjectBanana
 
             // _tiledMapRenderer.Draw();
             _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, 
-                SamplerState.PointClamp, null, null, null,
-                _camera.GetViewMatrix());
+                SamplerState.PointClamp, null, null, null);
             
-            _tiledMapRenderer.Draw(_camera.GetViewMatrix());
-       
+            _tiledMapRenderer.Draw();
+
+            _spriteBatch.Draw(ballTexture, _playerPosition, Color.White);
             _spriteBatch.End();
 
             base.Draw(gameTime);
